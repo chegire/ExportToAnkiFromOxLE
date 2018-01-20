@@ -1,0 +1,43 @@
+.ankiBox {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    width: 500px;
+    height: 390px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #f2f2f2;
+    box-shadow: 0 1px 5px grey;
+    border-radius: 10px;
+    padding: 14px;
+    z-index: 10;
+}
+.ankiBox-phonetics {
+    font-weight: bold;
+}
+.ankiBox-question, .ankiBox-answer {
+    box-shadow: 0 0px 2px grey;
+    padding: 5px;
+    background: white;
+}
+.ankiBox-examples {
+    list-style: disc;
+    padding-left: 25px;
+}
+.btn.ankiBox-hide-btn {
+    position: fixed;
+    z-index: 11;
+    border-color: lightgray;
+    height: 16px;
+    width: 15px;
+    line-height: 0px;
+    top: 12px;
+    padding: 0px;
+    left: 12px;
+}
+.ankiBox-hidden {
+    display: none;
+}
+.ankiBox-SendToAnki {
+    float: right;
+}
