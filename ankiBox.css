@@ -2,10 +2,9 @@
     position: fixed;
     left: 10px;
     top: 10px;
-    width: 500px;
-    height: 390px;
-    overflow-y: auto;
-    overflow-x: hidden;
+    right: 10px;
+    bottom: 10px;
+    overflow: auto;
     background: #f2f2f2;
     box-shadow: 0 1px 5px grey;
     border-radius: 10px;
@@ -19,6 +18,9 @@
     box-shadow: 0 0px 2px grey;
     padding: 5px;
     background: white;
+}
+.ankiBox-definition {
+    text-decoration: underline;
 }
 .ankiBox-examples {
     list-style: disc;
@@ -40,4 +42,7 @@
 }
 .ankiBox-sendToAnki {
     float: right;
+}
+.ankiBox ul {
+    padding: 15px;
 }

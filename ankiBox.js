@@ -3,6 +3,7 @@
     this.$elem = options.$elem;
     this.$page = options.$page;
     parsePage();
+    initTemplates();
     render();
 
     function parsePage() {
@@ -12,7 +13,13 @@
         var meanings = $page.find(defSelector).has('.def').toArray().map(function (item) {
             return {
                 definition: $(item).find('.def').text(),
-                examples: $(item).find('.x-g').toArray().map(function (item) { return $(item).text(); })
+                examples: $(item).find('.x').toArray().map(function (item) { 
+                    return {
+                        text: $(item).text(),
+                        checked: true
+                    }
+                }),
+                checked: true
             };
         });
         var question = $page.find('.webtop-g > .h').text();
@@ -23,56 +30,70 @@
         };
     }
 
-    function render() {
-        var answerTemplate =
-            '<b><span class="ankiBox-phonetics"><%-phonetics%></span></b>\
+    function initTemplates() {
+        self.templates = {
+            answerRenderTemplate: 
+                '<span class="ankiBox-phonetics"><%-phonetics%></span>\
+                <ul>\
+                <% meanings.forEach(function(meaning, index) { %>\
+                    <li>\
+                        <input class="ankiBox-parentCheckBox" type="checkbox" checked data-index="<%-index%>">\
+                        <span class="ankiBox-definition"><%-meaning.definition%></span>\
+                        <ul class="my-examples">\
+                        <% meaning.examples.forEach(function(example, index) { %>\
+                            <li><i class="my-example"><input type="checkbox" checked data-index="<%-index%>"><%-example.text%></i></li>\
+                        <% }); %>\
+                        </ul>\
+                    </li>\
+                <% }); %>\
+                </ul>',
+            answerSaveTemplate:
+                '<b><%-phonetics%></b><br>\
 				<% meanings.forEach(function(meaning) { %>\
-					<p>\
-						<u><span class="my-definition"><%-meaning.definition%></span></u>\
-						<ul class="my-examples">\
-						<% meaning.examples.forEach(function(example) { %>\
-							<li><i class="my-example"><%-example%></i></li>\
-						<% }); %>\
-						</ul>\
-					</p>\
-				<% }); %>';
-        var ankiTemplate =
-            '<button class="btn ankiBox-hide-btn">v</button>\
-                    <div class="ankiBox">\
-					Question:&nbsp;\
+                    <u><%-meaning.definition%></u><br>\
+                    <% meaning.examples.forEach(function(example) { %>\
+                        <i class="my-example"><%-example.text%></i><br>\
+                    <% }); %>\
+                    <br>\
+				<% }); %>',
+            ankiTemplate:
+                '<button class="btn ankiBox-hide-btn">v</button>\
+                <div class="ankiBox">\
+                    Question:&nbsp;\
                     <button class="btn ankiBox-copyAnkiQuestion">&nbsp;Copy&nbsp;</button>\
                     <button class="btn ankiBox-sendToAnki" >&nbsp;Send to Anki&nbsp;</button>\
                     <div>\
-					<input class="ankiBox-question" type="text"\
-					value="<%-question%>">\
-                    </input>\
-                    <button class="btn ankiBox-search">&nbsp;Search&nbsp;</button>\
+                        <input class="ankiBox-question" type="text"\
+                            value="<%-question%>">\
+                        </input>\
+                        <button class="btn ankiBox-search">&nbsp;Search&nbsp;</button>\
                     </div>\
-					<br>\
-					Answer:&nbsp;\
-					<button class="btn ankiBox-copyAnkiAnswer">&nbsp;Copy HTML&nbsp;</button>\
-					<div class="ankiBox-answer">\
-					<%=answer%>\
+                    <br>\
+                    Answer:&nbsp;\
+                    <button class="btn ankiBox-copyAnkiAnswer">&nbsp;Copy HTML&nbsp;</button>\
+                    <div class="ankiBox-answer">\
+                        <%=answer%>\
                     </div>\
-                    <textarea class="ankiBox-answerEditable">\
-					<%=answer%>\
-					</textare>\
-				</div>';
-        self.answerHTML = _.template(answerTemplate)({
+                </div>'
+        }
+    }
+
+    function render() {
+        self.answerHTML = _.template(self.templates.answerRenderTemplate)({
             phonetics: self.data.phonetics,
             meanings: self.data.meanings
         });
-        self.ankiHTML = _.template(ankiTemplate)({
+        self.ankiHTML = _.template(self.templates.ankiTemplate)({
             question: self.data.question,
             answer: self.answerHTML
         });
         self.$elem.html(self.ankiHTML);
         initEventListeners();
-    }
+    }  
 
     function initEventListeners() {
         self.$elem.find('.ankiBox-copyAnkiAnswer').click(function (event) {
-            copyTextToClipboard(self.answerHTML);
+            copyTextToClipboard(self.getAnswerHTML());
         });
         self.$elem.find('.ankiBox-copyAnkiQuestion').click(function (event) {
             copyTextToClipboard(self.data.question);
@@ -81,11 +102,41 @@
             $('.ankiBox').toggleClass('ankiBox-hidden');
         });
         self.$elem.find('.ankiBox-sendToAnki').click(function (event) {
-            sendToAnki(self.data.question, self.answerHTML);
+            sendToAnki(self.data.question, self.getAnswerHTML());
         });
-        self.$elem.find('.ankiBox-search').click(function(event) {
+        self.$elem.find('.ankiBox-search').click(function (event) {
             searchNewWord(self.$elem.find('.ankiBox-question').val());
         });
+        self.$elem.find('[type=checkbox]').click(function(event) {
+            isChecked = $(this).prop('checked');
+            if ($(this).hasClass('ankiBox-parentCheckBox')) { 
+                if (isChecked)
+                    $(this).siblings('ul').show();
+                else
+                    $(this).siblings('ul').hide();  
+                self.data.meanings[this.dataset.index].checked = isChecked;          
+            } 
+            else {
+                self.data.meanings[$(this).closest('ul').siblings('[type=checkbox]')[0].dataset.index].examples[this.dataset.index].checked = isChecked;
+            }
+        });
+    }
+    this.getAnswerHTML = function() {
+        var data = {
+            phonetics: self.data.phonetics,
+            meanings: self.data.meanings.filter(meaning => meaning.checked).map(meaning => {
+                var examples = meaning.examples.filter(example => example.checked);
+                return {
+                    definition: meaning.definition,
+                    examples: examples
+                }
+            })
+        }
+        var answerHTML = _.template(self.templates.answerSaveTemplate)({
+            phonetics: data.phonetics,
+            meanings: data.meanings
+        });
+        return answerHTML;
     }
     function sendToAnki(question, answer) {
         try {
@@ -102,8 +153,8 @@
         } catch (e) {
             console.log(`error getting decks: ${e}`);
         }
-        
-        function ankiConnectInvoke(action, version, params={}) {
+
+        function ankiConnectInvoke(action, version, params = {}) {
             const xhr = new XMLHttpRequest();
             xhr.addEventListener('error', () => console.log('failed to connect to AnkiConnect'));
             xhr.addEventListener('load', () => {
@@ -122,10 +173,10 @@
                     console.log(e);
                 }
             });
-    
+
             xhr.open('POST', 'http://127.0.0.1:8765');
-            xhr.send(JSON.stringify({action, version, params}));
-        }               
+            xhr.send(JSON.stringify({ action, version, params }));
+        }
     }
     function searchNewWord(word) {
         window.open("popup.html?" + word, "extension_popup", "width=570,height=480,scrollbars=yes,resizable=no");

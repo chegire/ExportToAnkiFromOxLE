@@ -25,6 +25,6 @@ $(document).ready(function () {
     function renderPage(oxfordPage) {
         $(document.body).html(oxfordPage);
         $(window.document.body).append('<div id="ankiOuterBox"></div>');
-        var ankiBox = new AnkiBox({ $elem: $('#ankiOuterBox'), $page: $(oxfordPage) });    
+        window.ankiBox = new AnkiBox({ $elem: $('#ankiOuterBox'), $page: $(oxfordPage) });    
     }
 });
