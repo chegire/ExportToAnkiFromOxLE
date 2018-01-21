@@ -22,14 +22,12 @@
 .ankiBox-definition {
     text-decoration: underline;
 }
-.ankiBox-examples {
-    list-style: disc;
-    padding-left: 25px;
+.ankiBox-example {
+    font-style: italic;
 }
 .btn.ankiBox-hide-btn {
     position: fixed;
     z-index: 11;
-    border-color: lightgray;
     height: 16px;
     width: 15px;
     line-height: 0px;

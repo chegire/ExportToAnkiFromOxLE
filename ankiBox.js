@@ -37,11 +37,13 @@
                 <ul>\
                 <% meanings.forEach(function(meaning, index) { %>\
                     <li>\
-                        <input class="ankiBox-parentCheckBox" type="checkbox" <% if (meaning.checked) { %>checked<% } %> data-index="<%-index%>">\
-                        <span class="ankiBox-definition"><%-meaning.definition%></span>\
-                        <ul class="my-examples <% if (!meaning.checked) { %>ankiBox-hidden<% } %>">\
+                        <label class="ankiBox-definition">\
+                            <input class="ankiBox-parentCheckBox" type="checkbox" <% if (meaning.checked) { %>checked<% } %> data-index="<%-index%>">\
+                            <%-meaning.definition%>\
+                        </label>\
+                        <ul class="ankiBox-examples <% if (!meaning.checked) { %>ankiBox-hidden<% } %>">\
                         <% meaning.examples.forEach(function(example, index) { %>\
-                            <li><i class="my-example"><input type="checkbox" <% if (example.checked) { %>checked<% } %> data-index="<%-index%>"><%-example.text%></i></li>\
+                            <li><label class="ankiBox-example"><input type="checkbox" <% if (example.checked) { %>checked<% } %> data-index="<%-index%>"><%-example.text%></label></li>\
                         <% }); %>\
                         </ul>\
                     </li>\
@@ -52,7 +54,7 @@
 				<% meanings.forEach(function(meaning) { %>\
                     <u><%-meaning.definition%></u><br>\
                     <% meaning.examples.forEach(function(example) { %>\
-                        <i class="my-example"><%-example.text%></i><br>\
+                        <i class="ankiBox-example"><%-example.text%></i><br>\
                     <% }); %>\
                     <br>\
 				<% }); %>',
@@ -104,12 +106,26 @@
             $('.ankiBox').toggleClass('ankiBox-hidden');
         });
         self.$elem.find('.ankiBox-sendToAnki').click(function (event) {
-            sendToAnki(self.data.question, self.getAnswerHTML());
+            var button = this;
+            sendToAnki(self.data.question, self.getAnswerHTML(), function(success) {
+                if (success) {
+                    button.style.backgroundColor = 'green';
+                    setTimeout(function() {
+                        button.style.backgroundColor = '';
+                    }, 500);
+                }
+                else {
+                    button.style.backgroundColor = 'red';
+                    setTimeout(function() {
+                        button.style.backgroundColor = '';
+                    }, 2000);
+                }
+            });
         });
         self.$elem.find('.ankiBox-search').click(function (event) {
             searchNewWord(self.$elem.find('.ankiBox-question').val());
         });
-        self.$elem.find('[type=checkbox]').click(function(event) {
+        self.$elem.find('[type=checkbox]').change(function(event) {
             isChecked = $(this).prop('checked');
             toggleCheckboxes(this, isChecked);
         });
@@ -140,41 +156,37 @@
         });
         return answerHTML;
     }
-    function sendToAnki(question, answer) {
-        try {
-            ankiConnectInvoke('addNote', 5, {
-                note: {
-                    deckName: 'English',
-                    modelName: 'Основная',
-                    fields: {
-                        "Вопрос": question,
-                        "Ответ": answer
-                    }
+    function sendToAnki(question, answer, callback) {
+        ankiConnectInvoke('addNote', 5, {
+            note: {
+                deckName: 'English',
+                modelName: 'Основная',
+                fields: {
+                    "Вопрос": question,
+                    "Ответ": answer
                 }
-            });
-        } catch (e) {
-            console.log(`error getting decks: ${e}`);
-        }
+            }
+        });
 
         function ankiConnectInvoke(action, version, params = {}) {
             const xhr = new XMLHttpRequest();
-            xhr.addEventListener('error', () => console.log('failed to connect to AnkiConnect'));
+            xhr.addEventListener('error', () => callback(false));
             xhr.addEventListener('load', () => {
                 try {
                     const response = JSON.parse(xhr.responseText);
                     if (response.error) {
-                        throw response.error;
+                        callback(false)
                     } else {
                         if (response.hasOwnProperty('result')) {
-                            console.log(response.result);
+                            callback(true);
                         } else {
-                            console.log('failed to get results from AnkiConnect');
+                            callback(false);
                         }
                     }
                 } catch (e) {
-                    console.log(e);
+                    callback(false)
                 }
-            });
+            }); 
 
             xhr.open('POST', 'http://127.0.0.1:8765');
             xhr.send(JSON.stringify({ action, version, params }));
@@ -186,13 +198,13 @@
     function toggleCheckboxes(checkbox, isChecked) {
         if ($(checkbox).hasClass('ankiBox-parentCheckBox')) { 
             if (isChecked)
-                $(checkbox).siblings('ul').removeClass('ankiBox-hidden');
+                $(checkbox).closest('label').siblings('ul').removeClass('ankiBox-hidden');
             else
-                $(checkbox).siblings('ul').addClass('ankiBox-hidden');  
+                $(checkbox).closest('label').siblings('ul').addClass('ankiBox-hidden');  
             self.data.meanings[checkbox.dataset.index].checked = isChecked;          
         } 
         else {
-            self.data.meanings[$(checkbox).closest('ul').siblings('[type=checkbox]')[0].dataset.index].examples[checkbox.dataset.index].checked = isChecked;
+            self.data.meanings[$(checkbox).closest('ul').siblings('label').find('[type=checkbox]')[0].dataset.index].examples[checkbox.dataset.index].checked = isChecked;
         }
     }
 }

@@ -1,10 +1,14 @@
 {
     "manifest_version": 2,
-    "name": "Getting started example",
-    "description": "This extension allows the user to change the background color of the current page.",
+    "name": "Find in oxle",
+    "description": "This extension allows the user to find a word in oxford learner's dictionary and send it to anki.",
     "version": "1.0",
     "browser_action": {
         "default_icon": "icon.png"
+    },
+    "icons": {
+        "16": "icon.png",
+        "128": "icon-big.png"
     },
     "background": {
         "persistent": false,
