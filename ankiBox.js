@@ -130,13 +130,12 @@
             toggleCheckboxes(this, isChecked);
         });
         self.$elem.find('.ankiBox-selectAll').click(function() {
-            $('.ankiBox-parentCheckBox').prop('checked', true);
-            $('.ankiBox-parentCheckBox').each(function() { toggleCheckboxes(this, true) });
-            
+            self.$elem.find('[type=checkbox]').prop('checked', true);
+            self.$elem.find('[type=checkbox]').each(function() { toggleCheckboxes(this, true) });          
         });
         self.$elem.find('.ankiBox-deselectAll').click(function() {
-            $('.ankiBox-parentCheckBox').prop('checked', false);
-            $('.ankiBox-parentCheckBox').each(function() { toggleCheckboxes(this, false) });
+            self.$elem.find('[type=checkbox]').prop('checked', false);
+            self.$elem.find('[type=checkbox]').each(function() { toggleCheckboxes(this, false) });
         });
     }
     this.getAnswerHTML = function() {
@@ -199,8 +198,9 @@
         if ($(checkbox).hasClass('ankiBox-parentCheckBox')) { 
             if (isChecked)
                 $(checkbox).closest('label').siblings('ul').removeClass('ankiBox-hidden');
-            else
+            else {
                 $(checkbox).closest('label').siblings('ul').addClass('ankiBox-hidden');  
+            }
             self.data.meanings[checkbox.dataset.index].checked = isChecked;          
         } 
         else {
