@@ -15,16 +15,22 @@ $(document).ready(function () {
         xhr.send();
     }
 
-    try {
+
+    settings = chrome.storage.sync.get({
+        definitionsCheckbox: 0,
+        examplesCheckbox: 0,
+        windowWidth: 1024,
+        windowHeight: 768
+    }, function (items) {
+        window.extSettings = items;
         var query = window.location.search.substr(1);
         getOxfordPage(query);
-    } catch (e) {
-        console.log(`error getting page: ${e}`);
-    }
+    });
+        
 
     function renderPage(oxfordPage) {
         $(document.body).html(oxfordPage);
         $(window.document.body).append('<div id="ankiOuterBox"></div>');
-        window.ankiBox = new AnkiBox({ $elem: $('#ankiOuterBox'), $page: $(oxfordPage) });    
+        window.ankiBox = new AnkiBox({ $elem: $('#ankiOuterBox'), $page: $(oxfordPage) });
     }
 });

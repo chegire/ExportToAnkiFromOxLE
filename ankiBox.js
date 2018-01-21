@@ -16,10 +16,10 @@
                 examples: $(item).find('.x').toArray().map(function (item) { 
                     return {
                         text: $(item).text(),
-                        checked: true
+                        checked: window.extSettings.examplesCheckbox
                     }
                 }),
-                checked: true
+                checked: window.extSettings.definitionsCheckbox
             };
         });
         var question = $page.find('.webtop-g > .h').text();
@@ -37,11 +37,11 @@
                 <ul>\
                 <% meanings.forEach(function(meaning, index) { %>\
                     <li>\
-                        <input class="ankiBox-parentCheckBox" type="checkbox" checked data-index="<%-index%>">\
+                        <input class="ankiBox-parentCheckBox" type="checkbox" <% if (meaning.checked) { %>checked<% } %> data-index="<%-index%>">\
                         <span class="ankiBox-definition"><%-meaning.definition%></span>\
-                        <ul class="my-examples">\
+                        <ul class="my-examples <% if (!meaning.checked) { %>ankiBox-hidden<% } %>">\
                         <% meaning.examples.forEach(function(example, index) { %>\
-                            <li><i class="my-example"><input type="checkbox" checked data-index="<%-index%>"><%-example.text%></i></li>\
+                            <li><i class="my-example"><input type="checkbox" <% if (example.checked) { %>checked<% } %> data-index="<%-index%>"><%-example.text%></i></li>\
                         <% }); %>\
                         </ul>\
                     </li>\
@@ -71,6 +71,8 @@
                     <br>\
                     Answer:&nbsp;\
                     <button class="btn ankiBox-copyAnkiAnswer">&nbsp;Copy HTML&nbsp;</button>\
+                    <button class="btn ankiBox-selectAll">&nbsp;Select all&nbsp;</button>\
+                    <button class="btn ankiBox-deselectAll">&nbsp;Deselect all&nbsp;</button>\
                     <div class="ankiBox-answer">\
                         <%=answer%>\
                     </div>\
@@ -109,16 +111,16 @@
         });
         self.$elem.find('[type=checkbox]').click(function(event) {
             isChecked = $(this).prop('checked');
-            if ($(this).hasClass('ankiBox-parentCheckBox')) { 
-                if (isChecked)
-                    $(this).siblings('ul').show();
-                else
-                    $(this).siblings('ul').hide();  
-                self.data.meanings[this.dataset.index].checked = isChecked;          
-            } 
-            else {
-                self.data.meanings[$(this).closest('ul').siblings('[type=checkbox]')[0].dataset.index].examples[this.dataset.index].checked = isChecked;
-            }
+            toggleCheckboxes(this, isChecked);
+        });
+        self.$elem.find('.ankiBox-selectAll').click(function() {
+            $('.ankiBox-parentCheckBox').prop('checked', true);
+            $('.ankiBox-parentCheckBox').each(function() { toggleCheckboxes(this, true) });
+            
+        });
+        self.$elem.find('.ankiBox-deselectAll').click(function() {
+            $('.ankiBox-parentCheckBox').prop('checked', false);
+            $('.ankiBox-parentCheckBox').each(function() { toggleCheckboxes(this, false) });
         });
     }
     this.getAnswerHTML = function() {
@@ -179,6 +181,18 @@
         }
     }
     function searchNewWord(word) {
-        window.open("popup.html?" + word, "extension_popup", "width=570,height=480,scrollbars=yes,resizable=no");
+        window.open("popup.html?" + word, "extension_popup", "width=1024,height=768,scrollbars=yes,resizable=no");
+    }
+    function toggleCheckboxes(checkbox, isChecked) {
+        if ($(checkbox).hasClass('ankiBox-parentCheckBox')) { 
+            if (isChecked)
+                $(checkbox).siblings('ul').removeClass('ankiBox-hidden');
+            else
+                $(checkbox).siblings('ul').addClass('ankiBox-hidden');  
+            self.data.meanings[checkbox.dataset.index].checked = isChecked;          
+        } 
+        else {
+            self.data.meanings[$(checkbox).closest('ul').siblings('[type=checkbox]')[0].dataset.index].examples[checkbox.dataset.index].checked = isChecked;
+        }
     }
 }

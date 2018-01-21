@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Extension Options</title>
+    <style>
+        body: {
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <label>
+            <input id="definitionsCheckbox" type="checkbox" value="0">All definitions are chosen by default</label>
+    </div>
+    <div>
+        <label>
+            <input id="examplesCheckbox" type="checkbox" value="0">All examples are chosen by default</label>
+    </div>
+
+    <div>
+        <label>Default window width</label>
+        <input id="windowWidth" type="number" value="1024">
+    </div>
+
+    <div>
+        <label>Default window height</label>
+        <input id="windowHeight" type="number" value="768">
+    </div>
+
+    <div id="status"></div>
+    <button id="save">Save</button>
+    <script src="options.js"></script>
+</body>
+
+</html>
