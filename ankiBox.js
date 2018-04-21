@@ -107,22 +107,17 @@
         self.$elem.find('.ankiBox-hide-btn').click(function (event) {
             $('.ankiBox').toggleClass('ankiBox-hidden');
         });
-        self.$elem.find('.ankiBox-sendToAnki').click(function (event) {
+        self.$elem.find('.ankiBox-sendToAnki').click(async function (event) {
             var button = this;
-            sendToAnki(self.data.question, self.getAnswerHTML(), function(success) {
-                if (success) {
-                    button.style.backgroundColor = 'green';
-                    setTimeout(function() {
-                        button.style.backgroundColor = '';
-                    }, 500);
-                }
-                else {
-                    button.style.backgroundColor = 'red';
-                    setTimeout(function() {
-                        button.style.backgroundColor = '';
-                    }, 2000);
-                }
-            });
+            try {
+                await sendToAnki(self.data.question, self.getAnswerHTML());
+                button.style.backgroundColor = 'green';
+                setTimeout(function() {
+                    button.style.backgroundColor = '';
+                }, 500);
+            } catch(e) {
+                alert(e.message);
+            }
         });
         self.$elem.find('.ankiBox-search').click(function (event) {
             searchNewWord(self.$elem.find('.ankiBox-question').val());
@@ -162,41 +157,61 @@
         });
         return answerHTML;
     }
-    function sendToAnki(question, answer, callback) {
-        ankiConnectInvoke('addNote', 5, {
-            note: {
-                deckName: 'English',
-                modelName: 'Основная',
-                fields: {
-                    "Вопрос": question,
-                    "Ответ": answer
+    async function sendToAnki(question, answer) {
+        let args = {
+            action: 'addNote', version: 5, params: {
+                note: {
+                    deckName: 'English',
+                    modelName: 'Основная',
+                    fields: {
+                        "Вопрос": question,
+                        "Ответ": answer
+                    }
                 }
             }
-        });
+        };
 
-        function ankiConnectInvoke(action, version, params = {}) {
-            const xhr = new XMLHttpRequest();
-            xhr.addEventListener('error', () => callback(false));
-            xhr.addEventListener('load', () => {
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    if (response.error) {
-                        callback(false)
-                    } else {
-                        if (response.hasOwnProperty('result')) {
-                            callback(true);
-                        } else {
-                            callback(false);
-                        }
-                    }
-                } catch (e) {
-                    callback(false)
-                }
-            }); 
+        let duplicateCards = await getCardsByFront(question);
 
-            xhr.open('POST', 'http://127.0.0.1:8765');
-            xhr.send(JSON.stringify({ action, version, params }));
+        if (duplicateCards.length != 0) {
+            throw new Error(`Такая карточка уже существует:\n${
+                duplicateCards.map(card => `Вопрос: ${card.fields['Вопрос'].value}\nОтвет: ${card.fields['Ответ'].value}`).join('\n')
+            }`);
         }
+
+        return fetchAnki(args);
+
+        async function getCardsByFront(front) {
+            let findNoteArgs = {  
+                "action": "findNotes",
+                "version": 5,
+                "params": {
+                    "query": `Вопрос:${front}`
+                }
+            }
+            
+            let duplicateIds = (await fetchAnki(findNoteArgs).then(response => response.json())).result;
+
+            let getNotesArgs = {
+                "action": "notesInfo",
+                "version": 5,
+                "params": {
+                    "notes": duplicateIds
+                }
+            }
+            return (await fetchAnki(getNotesArgs).then(response => response.json())).result;
+        }
+
+        function fetchAnki(args) {
+            return fetch('http://127.0.0.1:8765', {
+                method: 'post',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(args)
+            });
+        }   
     }
     function searchNewWord(word) {
         window.open("popup.html?" + word, "extension_popup", "width=1024,height=768,scrollbars=yes,resizable=no");
