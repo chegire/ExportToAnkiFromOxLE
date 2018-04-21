@@ -125,6 +125,11 @@
         self.$elem.find('.ankiBox-search').click(function (event) {
             searchNewWord(self.$elem.find('.ankiBox-question').val());
         });
+        self.$elem.find('.ankiBox-question').on('keyup', e => {
+            if (e.keyCode == 13) { //Enter
+                searchNewWord(self.$elem.find('.ankiBox-question').val());
+            }
+        });
         self.$elem.find('[type=checkbox]').change(function(event) {
             isChecked = $(this).prop('checked');
             toggleCheckboxes(this, isChecked);
