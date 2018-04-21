@@ -22,7 +22,9 @@
                 checked: window.extSettings.definitionsCheckbox
             };
         });
-        var question = ($('.webtop-g .pos').text() == 'verb' ? 'to ' : '') + $page.find('.webtop-g > .h').text();
+        var question = ($('.webtop-g .pos').text() == 'verb' ? 'to ' : '') + (
+            $page.find('.webtop-g > .h')[0] ? $page.find('.webtop-g > .h')[0].childNodes[0].textContent : ''
+        );
         self.data = {
             phonetics: phonetics,
             meanings: meanings,
