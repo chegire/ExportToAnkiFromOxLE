@@ -186,7 +186,7 @@
                 "action": "findNotes",
                 "version": 5,
                 "params": {
-                    "query": `Вопрос:${front}`
+                    "query": `Вопрос:${front.replace(/\s/g, '_')}`
                 }
             }
             
