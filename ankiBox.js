@@ -166,7 +166,8 @@
                     fields: {
                         "Вопрос": question,
                         "Ответ": answer
-                    }
+                    },
+                    tags: []
                 }
             }
         };
