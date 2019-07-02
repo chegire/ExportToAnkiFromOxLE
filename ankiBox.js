@@ -13,7 +13,7 @@
         var meanings = $page.find(defSelector).has('.def').toArray().map(function (item) {
             return {
                 definition: $(item).find('.def').text(),
-                examples: $(item).find('.x').toArray().map(function (item) { 
+                examples: $(item).find('.x').toArray().map(function (item) {
                     return {
                         text: $(item).text(),
                         checked: window.extSettings.examplesCheckbox
@@ -28,14 +28,15 @@
         self.data = {
             phonetics: phonetics,
             meanings: meanings,
-            question: question
+            question: question,
+            russianWord: ''
         };
     }
 
     function initTemplates() {
         self.templates = {
-            answerRenderTemplate: 
-                '<span class="ankiBox-phonetics"><%-phonetics%></span>\
+            answerRenderTemplate:
+                `<span class="ankiBox-phonetics"><%-phonetics%></span>\
                 <ul>\
                 <% meanings.forEach(function(meaning, index) { %>\
                     <li>\
@@ -50,16 +51,19 @@
                         </ul>\
                     </li>\
                 <% }); %>\
-                </ul>',
+                </ul>
+                Русский аналог - <input class="ankiBox-russianWord" type="text"></input>\
+                `,
             answerSaveTemplate:
-                '<b><%-phonetics%></b><br>\
+                `<b><%-phonetics%></b><br>\
 				<% meanings.forEach(function(meaning) { %>\
                     <u><%-meaning.definition%></u><br>\
                     <% meaning.examples.forEach(function(example) { %>\
                         <i class="ankiBox-example"><%-example.text%></i><br>\
                     <% }); %>\
                     <br>\
-				<% }); %>',
+                <% }); %>
+                <%-russianWord%>`,
             ankiTemplate:
                 '<button class="btn ankiBox-hide-btn">v</button>\
                 <div class="ankiBox">\
@@ -95,7 +99,7 @@
         });
         self.$elem.html(self.ankiHTML);
         initEventListeners();
-    }  
+    }
 
     function initEventListeners() {
         self.$elem.find('.ankiBox-copyAnkiAnswer').click(function (event) {
@@ -112,10 +116,10 @@
             try {
                 await sendToAnki(self.data.question, self.getAnswerHTML());
                 button.style.backgroundColor = 'green';
-                setTimeout(function() {
+                setTimeout(function () {
                     button.style.backgroundColor = '';
                 }, 500);
-            } catch(e) {
+            } catch (e) {
                 alert(e.message);
             }
         });
@@ -127,20 +131,23 @@
                 searchNewWord(self.$elem.find('.ankiBox-question').val());
             }
         });
-        self.$elem.find('[type=checkbox]').change(function(event) {
+        self.$elem.find('[type=checkbox]').change(function (event) {
             isChecked = $(this).prop('checked');
             toggleCheckboxes(this, isChecked);
         });
-        self.$elem.find('.ankiBox-selectAll').click(function() {
+        self.$elem.find('.ankiBox-selectAll').click(function () {
             self.$elem.find('[type=checkbox]').prop('checked', true);
-            self.$elem.find('[type=checkbox]').each(function() { toggleCheckboxes(this, true) });          
+            self.$elem.find('[type=checkbox]').each(function () { toggleCheckboxes(this, true) });
         });
-        self.$elem.find('.ankiBox-deselectAll').click(function() {
+        self.$elem.find('.ankiBox-deselectAll').click(function () {
             self.$elem.find('[type=checkbox]').prop('checked', false);
-            self.$elem.find('[type=checkbox]').each(function() { toggleCheckboxes(this, false) });
+            self.$elem.find('[type=checkbox]').each(function () { toggleCheckboxes(this, false) });
+        });
+        self.$elem.find('.ankiBox-russianWord').change(e => {
+            self.data.russianWord = e.target.value;
         });
     }
-    this.getAnswerHTML = function() {
+    this.getAnswerHTML = function () {
         var data = {
             phonetics: self.data.phonetics,
             meanings: self.data.meanings.filter(meaning => meaning.checked).map(meaning => {
@@ -149,12 +156,10 @@
                     definition: meaning.definition,
                     examples: examples
                 }
-            })
+            }),
+            russianWord: self.data.russianWord
         }
-        var answerHTML = _.template(self.templates.answerSaveTemplate)({
-            phonetics: data.phonetics,
-            meanings: data.meanings
-        });
+        var answerHTML = _.template(self.templates.answerSaveTemplate)(data);
         return answerHTML;
     }
     async function sendToAnki(question, answer) {
@@ -177,20 +182,20 @@
         if (duplicateCards.length != 0) {
             throw new Error(`Такая карточка уже существует:\n${
                 duplicateCards.map(card => `Вопрос: ${card.fields['Вопрос'].value}\nОтвет: ${card.fields['Ответ'].value}`).join('\n')
-            }`);
+                }`);
         }
 
         return fetchAnki(args);
 
         async function getCardsByFront(front) {
-            let findNoteArgs = {  
+            let findNoteArgs = {
                 "action": "findNotes",
                 "version": 5,
                 "params": {
                     "query": `Вопрос:${front.replace(/\s/g, '_')}`
                 }
             }
-            
+
             let duplicateIds = (await fetchAnki(findNoteArgs).then(response => response.json())).result;
 
             let getNotesArgs = {
@@ -212,20 +217,20 @@
                 },
                 body: JSON.stringify(args)
             });
-        }   
+        }
     }
     function searchNewWord(word) {
         window.open("popup.html?" + word, "extension_popup", "width=1024,height=768,scrollbars=yes,resizable=no");
     }
     function toggleCheckboxes(checkbox, isChecked) {
-        if ($(checkbox).hasClass('ankiBox-parentCheckBox')) { 
+        if ($(checkbox).hasClass('ankiBox-parentCheckBox')) {
             if (isChecked)
                 $(checkbox).closest('label').siblings('ul').removeClass('ankiBox-hidden');
             else {
-                $(checkbox).closest('label').siblings('ul').addClass('ankiBox-hidden');  
+                $(checkbox).closest('label').siblings('ul').addClass('ankiBox-hidden');
             }
-            self.data.meanings[checkbox.dataset.index].checked = isChecked;          
-        } 
+            self.data.meanings[checkbox.dataset.index].checked = isChecked;
+        }
         else {
             self.data.meanings[$(checkbox).closest('ul').siblings('label').find('[type=checkbox]')[0].dataset.index].examples[checkbox.dataset.index].checked = isChecked;
         }
